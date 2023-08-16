@@ -5,11 +5,16 @@ function GetData() {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [info, setInfo] = useState([]);
-  const [tagsArray, setTagsArray] = useState([]);
-  const [filterList, setFilterList] = useState(() => {
-    const storedFilterList = localStorage.getItem('filterList');
-    return storedFilterList ? JSON.parse(storedFilterList) : [];
-  });
+  const [filterList, setFilterList] = useState([]);
+  
+  // manualFilterList is a List of filter values
+  //Fill it with the filter names you want to show up! 
+  //ex: 'Material','Testing','Entity'
+  //If the list is empty (i.e. len==0 ), the widget will return the full FAQ
+  
+  //INPUT HERE!!!!!
+  const manualFilterList = [];
+  //INPUT HERE!!!!!
 
   useEffect(() => {
     fetch('https://educated-married-visor.glitch.me')
@@ -32,64 +37,17 @@ function GetData() {
     }));
     setInfo(updatedInfo);
 
-    const updatedTagsArray = [];
-    data.forEach(item => {
-      const tags = item.Tags.multi_select;
-      tags.forEach(tag => {
-        if (!updatedTagsArray.includes(tag.name)) {
-          updatedTagsArray.push(tag.name);
-        }
-      });
-    });
-    setTagsArray(updatedTagsArray);
+    // Set the filterList to the manualFilterList array
+    setFilterList(manualFilterList);
   }, [data]);
 
-  useEffect(() => {
-    localStorage.setItem('filterList', JSON.stringify(filterList));
-  }, [filterList]);
+  
 
-  const handleButtonClick = name => {
-    if (filterList.includes(name)) {
-      setFilterList(prevList => prevList.filter(item => item !== name));
-    } else {
-      setFilterList(prevList => [...prevList, name]);
-    }
-  };
-
-  function IndividualButton({ name }) {
-    const checkFilter = filterList.includes(name);
-
-    const buttonClick = () => {
-      handleButtonClick(name);
-    };
-
-    return (
-      <button
-        key={name}
-        className={checkFilter ? 'clicked' : 'unclicked'}
-        onClick={buttonClick}
-      >
-        {name}
-      </button>
-    );
-  }
-
-  function TagButtons() {
-    return (
-      <>
-        <div className='header'>
-          Tags:
-          {tagsArray.map(item => (
-            <IndividualButton key={item} name={item} />
-          ))}
-        </div>
-        <span className='header'>&nbsp;</span>
-        <FullAccordion data={info} filterList={filterList} />
-      </>
-    );
-  }
-
-  return <TagButtons />;
+  return (
+    <>
+      <FullAccordion data={info} filterList={filterList} />
+    </>
+  );
 }
 
 function AccordionSection({ question, answer }) {
@@ -120,7 +78,21 @@ function AccordionSection({ question, answer }) {
 }
 
 function FullAccordion({ data, filterList }) {
-  const filteredData = filterList.length > 0 ? data.filter(item => item.tags.some(tag => filterList.includes(tag))) : data;
+  // Check if the filterList is empty
+  if (filterList.length === 0) {
+    return (
+      <>
+        <div>
+          {data.map((info, index) => (
+            <AccordionSection key={index} question={info.question} answer={info.answer} />
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  // If filterList is not empty, apply filtering logic
+  const filteredData = data.filter(item => item.tags.some(tag => filterList.includes(tag)));
 
   return (
     <>
